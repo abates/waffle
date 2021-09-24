@@ -1,0 +1,10 @@
+{{template "license.tmpl" .}}
+
+package {{ .Package }}
+
+import embed
+templates := map[string]string{
+{{range .Data}}
+{{end}}
+}
+
