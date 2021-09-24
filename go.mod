@@ -1,3 +1,3 @@
-module github.com/waffle
+module github.com/abates/waffle
 
-go 1.15
+go 1.17
