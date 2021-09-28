@@ -1,14 +1,13 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+
+	"github.com/abates/waffle"
 )
 
-type command struct {
+/*type command struct {
 	desc  string
 	run   func([]string) error
 	flags *flag.FlagSet
@@ -56,10 +55,14 @@ func usage() {
 		fmt.Fprintf(output, format, name, cmd.desc)
 	}
 	fmt.Fprintf(output, "\nUse \"%s help <command>\" for more information about a command\n", filepath.Base(os.Args[0]))
-}
+}*/
+
+var app = waffle.NewCommand()
 
 func main() {
-	if len(os.Args) < 2 {
+	app.Name = filepath.Base(os.Args[0])
+	app.Run(os.Args)
+	/*if len(os.Args) < 2 {
 		usage()
 		os.Exit(1)
 	} else if cmd, found := commands[os.Args[1]]; found {
@@ -74,5 +77,5 @@ func main() {
 
 	fmt.Fprintf(output, "Command %q not found\n", os.Args[1])
 	usage()
-	os.Exit(3)
+	os.Exit(3)*/
 }

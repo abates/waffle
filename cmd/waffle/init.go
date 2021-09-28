@@ -17,8 +17,8 @@ func init() {
 		dir = "main"
 	}
 
-	cmd := addCommand("init", "initialize current directory with new project tree", initCmd)
-	cmd.flags.StringVar(&config.Pkg, "pkg", filepath.Base(dir), "Package name to use for generated code")
+	cmd := app.AddCommand("init", "initialize current directory with new project tree", initCmd)
+	cmd.Flags.StringVar(&config.Pkg, "pkg", filepath.Base(dir), "Package name to use for generated code")
 }
 
 func initCmd(args []string) error {

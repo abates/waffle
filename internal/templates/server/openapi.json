@@ -1,0 +1,12 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "{{ .Title }}",
+    "version": "{{ .Version }}",
+    "contact": {
+      "name": "{{ .Maintainer.Name }}",
+      "email": "{{ .Maintainer.Email }}",
+      "url": "{{ .URL }}"
+    }
+  }
+}
