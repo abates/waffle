@@ -16,16 +16,6 @@ import (
 
 //go:embed internal/templates
 var internal embed.FS
-var templates fs.FS
-
-func init() {
-	// create filesystem rooted at templates
-	var err error
-	templates, err = fs.Sub(internal, "internal/templates")
-	if err != nil {
-		panic("Failed to build subdirectory FS for internal/templates")
-	}
-}
 
 func getTmplName(filename string) string {
 	dir, tmplName := path.Split("/" + filename)
@@ -43,9 +33,9 @@ type templateBuilder struct {
 	templates []string
 }
 
-func newTemplateBuilder(dest string) (*templateBuilder, error) {
+func newTemplateBuilder(input fs.FS, dest string) (*templateBuilder, error) {
 	tb := &templateBuilder{
-		input:     templates,
+		input:     input,
 		dest:      dest,
 		root:      template.New("root"),
 		templates: []string{},
@@ -57,6 +47,9 @@ func newTemplateBuilder(dest string) (*templateBuilder, error) {
 func (tb *templateBuilder) init() error {
 	return fs.WalkDir(tb.input, ".", func(filename string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
+			if err != nil {
+				Logger.Logf("Template Builder <fail>failed</fail> loading %s: %v", filename, err)
+			}
 			return err
 		}
 
@@ -70,7 +63,12 @@ func (tb *templateBuilder) init() error {
 			var tmplContent []byte
 			tmplContent, err = fs.ReadFile(tb.input, filename)
 			if err == nil {
+				Logger.Logf("Parsing template %v", filename)
 				_, err = subTmpl.Parse(string(tmplContent))
+			}
+
+			if err != nil {
+				Logger.Logf("Template Builder <fail>failed</fail> to load template %s: %v", filename, err)
 			}
 		}
 		return err
@@ -81,23 +79,28 @@ func (tb *templateBuilder) executeTemplate(buf *bytes.Buffer, name string, confi
 	defer buf.Reset()
 	err := tb.root.ExecuteTemplate(buf, name, config)
 	if err == nil {
-		b := buf.Bytes()
+		dest := filepath.Join(tb.dest, filepath.FromSlash(name))
+		err = os.MkdirAll(filepath.Dir(dest), 0755)
+
 		if err == nil && strings.HasSuffix(name, ".go") {
+			b := buf.Bytes()
 			if b, err = format.Source(buf.Bytes()); err != nil {
 				// still write the file contents, but report the
 				// formatting error
-				println("Failed to format " + name + ": " + err.Error())
+				err = fmt.Errorf("failed to format go source file %s: %w", dest, err)
 				b = buf.Bytes()
-				// don't stop processing
 			}
+
+			err1 := ioutil.WriteFile(dest, b, 0644)
+			if err == nil && err1 != nil {
+				err = fmt.Errorf("failed to write file %s: %w", dest, err)
+			}
+		} else if err != nil {
+			err = fmt.Errorf("failed to create directory %s: %w", filepath.Dir(dest), err)
 		}
 
-		// TODO: should filemode be configurable?
-		dest := filepath.Join(tb.dest, filepath.FromSlash(name))
-		err = os.MkdirAll(filepath.Dir(dest), 0755)
-		if err == nil {
-			err = ioutil.WriteFile(dest, b, 0644)
-		}
+	} else {
+		err = fmt.Errorf("failed to execute template %s: %v", name, err)
 	}
 	return err
 }
@@ -107,17 +110,25 @@ func (tb *templateBuilder) execute(config Config) error {
 	for _, tmplName := range tb.templates {
 		err := tb.executeTemplate(buf, tmplName, config)
 
-		if err != nil {
+		if err == nil {
+			Logger.Logf("<success>%s</success>", tmplName)
+		} else {
+			Logger.Logf("<fail>%s</fail>: %v", tmplName, err)
 			return err
 		}
 	}
 	return nil
 }
 
-func ExecuteTemplates(destDir string, config Config) error {
-	tb, err := newTemplateBuilder(destDir)
+func ExecuteTemplates(srcDir string, destDir string, config Config) error {
+	templates, err := fs.Sub(internal, fmt.Sprintf("internal/templates/%s", srcDir))
 	if err == nil {
-		err = tb.execute(config)
+		tb, err := newTemplateBuilder(templates, destDir)
+		if err == nil {
+			err = tb.execute(config)
+		}
+	} else {
+		err = fmt.Errorf("Failed to mount %q: %w", srcDir, err)
 	}
 	return err
 }

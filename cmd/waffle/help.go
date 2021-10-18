@@ -1,29 +1,29 @@
 package main
 
+import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/abates/waffle"
+)
+
+var helpCmd *waffle.Command
+
 func init() {
-	app.AddCommand("help", "obtain more information about a command", helpCmd)
+	helpCmd = app.AddCommand("help", "obtain more information about a command", helpCmdFunc)
 }
 
-/*func helpUsage(name string, cmd command) {
-	if cmd.flags == nil {
-		cmdUsage("%s\n", name)
-	} else {
-		cmdUsage("%s [arguments]\n", name)
-		fmt.Fprintf(output, "Arguments:\n")
-		cmd.flags.PrintDefaults()
-	}
-}*/
-
-func helpCmd(args []string) error {
-	/*if len(args) < 1 {
-		cmdUsage("help <command>")
+func helpCmdFunc(args ...string) error {
+	if len(args) < 1 {
+		fmt.Fprintf(helpCmd.Output(), "Usage: %s <command>\n", strings.Join(helpCmd.Path(), " "))
 		os.Exit(1)
-	} else if cmd, found := commands[args[0]]; found {
-		helpUsage(args[0], cmd)
+	} else if cmd, found := app.Lookup(args[0]); found {
+		cmd.Usage()
 	} else {
-		fmt.Fprintf(output, "Command %q not found\n", args[0])
-		usage()
+		fmt.Fprintf(helpCmd.Output(), "Command %q not found\n", args[0])
+		fmt.Fprintf(helpCmd.Output(), "Usage: %s <command>\n", strings.Join(helpCmd.Path(), " "))
 		os.Exit(2)
-	}*/
+	}
 	return nil
 }

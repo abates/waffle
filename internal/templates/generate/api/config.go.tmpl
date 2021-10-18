@@ -1,0 +1,23 @@
+package api
+
+import "time"
+
+type Config struct {
+  ReadTimeout time.Duration
+  WriteTimeout time.Duration
+  ListenOn []string
+}
+
+func NewConfig() *Config {
+  // sane defaults
+  config := &Config{
+    ReadTimeout: time.Second * 15,
+    WriteTimeout: time.Second * 15,
+    ListenOn: []string{":8080"},
+  }
+
+  // load config file first (if it exists)
+
+  // load from env next
+  return config
+}

@@ -1,0 +1,34 @@
+package main
+
+import (
+  "log"
+	"net/http"
+	"sync"
+
+	"{{ .Module.Path }}/api"
+)
+
+func listen(config *api.Config, addr string, handler http.Handler) {
+	srv := &http.Server{
+		Handler: handler,
+		Addr:    addr,
+
+		ReadTimeout:  config.ReadTimeout,
+		WriteTimeout: config.WriteTimeout,
+	}
+	log.Print(srv.ListenAndServe())
+}
+
+func main() {
+	var wg sync.WaitGroup
+	config := api.NewConfig()
+	server := api.NewServer(config)
+	for _, addr := range config.ListenOn {
+		wg.Add(1)
+		go func() {
+			listen(config, addr, server)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
