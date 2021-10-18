@@ -7,6 +7,8 @@
 *.so
 *.dylib
 
+cmd/waffle/waffle
+
 # Test binary, built with `go test -c`
 *.test
 
